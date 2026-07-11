@@ -29,11 +29,6 @@ const purchaseSchema = new mongoose.Schema({
   purchaseDate: {
     type: Date,
     default: Date.now
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'completed', 'cancelled'],
-    default: 'completed'
   }
 }, {
   timestamps: true,

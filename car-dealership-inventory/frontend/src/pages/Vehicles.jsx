@@ -38,18 +38,12 @@ export default function Vehicles({ showToast }) {
       const queryStr = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
 
       const [vehiclesData, inventoriesData] = await Promise.all([
-        api.get(`/vehicles${queryStr}`),
+        api.get(`/vehicles/search${queryStr}`),
         api.get('/inventory')
       ]);
 
       setVehicles(vehiclesData);
       setInventories(inventoriesData);
-
-      // Collect unique categories for filter list
-      const uniqueCats = Array.from(new Set(vehiclesData.map(v => v.category)));
-      if (categories.length === 0) {
-        setCategories(uniqueCats);
-      }
     } catch (err) {
       showToast(err.message || 'Failed to load vehicle data', 'error');
     } finally {
@@ -93,8 +87,8 @@ export default function Vehicles({ showToast }) {
 
     try {
       setSubmittingPurchase(true);
-      await api.post('/purchases', {
-        inventoryId: selectedInventory.id,
+      await api.post(`/vehicles/${selectedVehicle.id}/purchase`, {
+        color: selectedInventory.color,
         quantityPurchased: Number(purchaseQuantity)
       });
       showToast('Vehicle purchased successfully!', 'success');
@@ -177,7 +171,7 @@ export default function Vehicles({ showToast }) {
             onChange={(e) => setCategory(e.target.value)}
           >
             <option value="">All Categories</option>
-            {categories.map((cat, idx) => (
+            {['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible', 'Sport', 'Van', 'Off-Road', 'Pickup'].map((cat, idx) => (
               <option key={idx} value={cat}>{cat}</option>
             ))}
           </select>
@@ -418,14 +412,23 @@ export default function Vehicles({ showToast }) {
 
               <div className="form-group">
                 <label className="form-label">Category</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Sedan, SUV, Coupe"
+                <select
+                  className="form-select"
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value)}
                   required
-                />
+                >
+                  <option value="" disabled>-- Select Category --</option>
+                  <option value="Sedan">Sedan</option>
+                  <option value="SUV">SUV</option>
+                  <option value="Hatchback">Hatchback</option>
+                  <option value="Coupe">Coupe</option>
+                  <option value="Convertible">Convertible</option>
+                  <option value="Sport">Sport</option>
+                  <option value="Van">Van</option>
+                  <option value="Off-Road">Off-Road</option>
+                  <option value="Pickup">Pickup</option>
+                </select>
               </div>
 
               <div className="form-group">

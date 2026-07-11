@@ -99,9 +99,6 @@ export default function PurchaseHistory({ showToast }) {
                       day: 'numeric'
                     })}
                   </div>
-                  <span className={`status-badge ${purchase.status}`}>
-                    {purchase.status}
-                  </span>
                 </div>
               </div>
             );

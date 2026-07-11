@@ -52,7 +52,7 @@ export default function AdminDashboard({ showToast }) {
       const inv = inventories.find(i => i.id === selectedInventoryId);
       if (inv) {
         setColor(inv.color);
-        setQuantity(inv.quantity);
+        setQuantity(''); // Let user enter quantity to add
         setPrice(inv.price);
       }
     }
@@ -96,8 +96,8 @@ export default function AdminDashboard({ showToast }) {
       return;
     }
 
-    if (selectedInventoryId === 'new' && !color) {
-      showToast('Color is required for new variants', 'error');
+    if (!color) {
+      showToast('Color is required', 'error');
       return;
     }
 
@@ -108,24 +108,13 @@ export default function AdminDashboard({ showToast }) {
 
     try {
       setSubmittingInventory(true);
-      if (selectedInventoryId === 'new') {
-        // Create new variant
-        await api.post('/inventory', {
-          vehicleId: selectedVehicleId,
-          color,
-          quantity: Number(quantity),
-          price: Number(price)
-        });
-        showToast('New color variant inventory added!', 'success');
-      } else {
-        // Restock existing variant
-        await api.put(`/inventory/${selectedInventoryId}`, {
-          quantity: Number(quantity),
-          price: Number(price),
-          color // support renaming color if needed
-        });
-        showToast('Inventory restocked successfully!', 'success');
-      }
+      // Call unified vehicle restocking endpoint
+      await api.post(`/vehicles/${selectedVehicleId}/restock`, {
+        color,
+        quantity: Number(quantity),
+        price: Number(price)
+      });
+      showToast('Inventory restocked successfully!', 'success');
       
       // Reset inventory form
       setSelectedVehicleId('');
@@ -196,14 +185,23 @@ export default function AdminDashboard({ showToast }) {
 
               <div className="form-group">
                 <label className="form-label">Category</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Sedan, SUV, Coupe, Electric"
+                <select
+                  className="form-select"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   required
-                />
+                >
+                  <option value="" disabled>-- Select Category --</option>
+                  <option value="Sedan">Sedan</option>
+                  <option value="SUV">SUV</option>
+                  <option value="Hatchback">Hatchback</option>
+                  <option value="Coupe">Coupe</option>
+                  <option value="Convertible">Convertible</option>
+                  <option value="Sport">Sport</option>
+                  <option value="Van">Van</option>
+                  <option value="Off-Road">Off-Road</option>
+                  <option value="Pickup">Pickup</option>
+                </select>
               </div>
 
               <div className="form-group">
