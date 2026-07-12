@@ -88,3 +88,16 @@ exports.restockVehicle = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.deleteInventory = async (req, res, next) => {
+  try {
+    const inventory = await Inventory.findById(req.params.id);
+    if (!inventory) {
+      return res.status(404).json({ message: 'Inventory record not found' });
+    }
+    await Inventory.deleteOne({ _id: req.params.id });
+    res.json({ message: 'Inventory record deleted successfully' });
+  } catch (err) {
+    next(err);
+  }
+};

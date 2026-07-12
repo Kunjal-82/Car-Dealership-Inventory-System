@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { PlusCircle, RefreshCw, Car } from 'lucide-react';
+import { PlusCircle, RefreshCw, Car, Trash2 } from 'lucide-react';
 
 export default function AdminDashboard({ showToast }) {
   const [vehicles, setVehicles] = useState([]);
@@ -137,6 +137,30 @@ export default function AdminDashboard({ showToast }) {
       showToast(err.message || 'Failed to manage inventory', 'error');
     } finally {
       setSubmittingInventory(false);
+    }
+  };
+
+  const handleDeleteInventory = async () => {
+    if (!selectedInventoryId || selectedInventoryId === 'new') return;
+    
+    if (window.confirm('Are you sure you want to delete this color variant from the inventory? This will remove all stock of this color.')) {
+      try {
+        setSubmittingInventory(true);
+        await api.delete(`/inventory/${selectedInventoryId}`);
+        showToast('Inventory variant deleted successfully!', 'success');
+        
+        // Reset inventory form
+        setSelectedVehicleId('');
+        setSelectedInventoryId('new');
+        setColor('');
+        setQuantity('');
+        setPrice('');
+        fetchData();
+      } catch (err) {
+        showToast(err.message || 'Failed to delete inventory', 'error');
+      } finally {
+        setSubmittingInventory(false);
+      }
     }
   };
 
@@ -325,17 +349,32 @@ export default function AdminDashboard({ showToast }) {
                 </>
               )}
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{ width: '100%', marginTop: '1rem' }}
-                disabled={submittingInventory || !selectedVehicleId}
-              >
-                <RefreshCw size={16} />
-                {submittingInventory 
-                  ? 'Saving inventory...' 
-                  : selectedInventoryId === 'new' ? 'Add Inventory Variant' : 'Update Inventory Variant'}
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ flex: 2 }}
+                  disabled={submittingInventory || !selectedVehicleId}
+                >
+                  <RefreshCw size={16} />
+                  {submittingInventory 
+                    ? 'Saving...' 
+                    : selectedInventoryId === 'new' ? 'Add Variant' : 'Update Variant'}
+                </button>
+                
+                {selectedInventoryId !== 'new' && (
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    style={{ flex: 1 }}
+                    onClick={handleDeleteInventory}
+                    disabled={submittingInventory}
+                  >
+                    <Trash2 size={16} />
+                    Delete
+                  </button>
+                )}
+              </div>
             </form>
           </div>
         </div>

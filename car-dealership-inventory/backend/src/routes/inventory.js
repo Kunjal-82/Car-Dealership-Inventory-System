@@ -6,5 +6,6 @@ const { authenticateToken, requireRole } = require('../middleware/auth');
 router.post('/', authenticateToken, requireRole(['admin']), inventoryController.createInventory);
 router.get('/', inventoryController.getInventory);
 router.put('/:id', authenticateToken, requireRole(['admin']), inventoryController.updateInventory);
+router.delete('/:id', authenticateToken, requireRole(['admin']), inventoryController.deleteInventory);
 
 module.exports = router;
