@@ -33,4 +33,24 @@ const vehicleSchema = new mongoose.Schema({
   }
 });
 
+vehicleSchema.pre('deleteOne', async function(next) {
+  const query = this.getQuery();
+  const vehicleId = query._id;
+  if (vehicleId) {
+    const Inventory = mongoose.model('Inventory');
+    await Inventory.deleteMany({ vehicleId });
+  }
+  next();
+});
+
+vehicleSchema.pre('findOneAndDelete', async function(next) {
+  const query = this.getQuery();
+  const vehicleId = query._id;
+  if (vehicleId) {
+    const Inventory = mongoose.model('Inventory');
+    await Inventory.deleteMany({ vehicleId });
+  }
+  next();
+});
+
 module.exports = mongoose.model('Vehicle', vehicleSchema);

@@ -1,19 +1,15 @@
 const BASE_URL = 'http://localhost:8080/api';
 
 const request = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('token');
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include', // Automatically send cookies with request
   });
 
   const data = await response.json();

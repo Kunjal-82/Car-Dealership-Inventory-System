@@ -77,7 +77,7 @@ export default function PurchaseHistory({ showToast }) {
 
                 <div className="purchase-price-details">
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Unit Price</p>
-                  <p style={{ fontWeight: '600' }}>${purchase.unitPrice.toLocaleString()}</p>
+                  <p style={{ fontWeight: '600' }}>₹{purchase.unitPrice.toLocaleString('en-IN')}</p>
                 </div>
 
                 <div className="purchase-price-details">
@@ -85,7 +85,7 @@ export default function PurchaseHistory({ showToast }) {
                   <p style={{ fontWeight: '700' }}>
                     {purchase.quantityPurchased}x {` `}
                     <span style={{ color: 'var(--accent)' }}>
-                      (${purchase.totalPrice.toLocaleString()})
+                      (₹{purchase.totalPrice.toLocaleString('en-IN')})
                     </span>
                   </p>
                 </div>

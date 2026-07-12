@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Search, Filter, ShoppingBag, Edit, Trash2, X, AlertCircle } from 'lucide-react';
+import { Search, Filter, ShoppingBag, Edit, Trash2, X, AlertCircle, ArrowRight, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react';
 
 export default function Vehicles({ showToast }) {
   const { user, isAdmin, isCustomer } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [vehicles, setVehicles] = useState([]);
   const [inventories, setInventories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,11 @@ export default function Vehicles({ showToast }) {
   const [editCategory, setEditCategory] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [submittingEdit, setSubmittingEdit] = useState(false);
+
+  // Admin Delete Confirmation Modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [vehicleToDelete, setVehicleToDelete] = useState(null);
+  const [submittingDelete, setSubmittingDelete] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -132,20 +139,79 @@ export default function Vehicles({ showToast }) {
   };
 
   // Admin Delete flow
-  const handleDeleteVehicle = async (vehicleId) => {
-    if (window.confirm('Are you sure you want to delete this vehicle model? This will not affect past purchase records but removes it from the catalog.')) {
-      try {
-        await api.delete(`/vehicles/${vehicleId}`);
-        showToast('Vehicle deleted successfully', 'success');
-        fetchData();
-      } catch (err) {
-        showToast(err.message || 'Delete failed', 'error');
-      }
+  const openDeleteModal = (vehicle) => {
+    setVehicleToDelete(vehicle);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!vehicleToDelete) return;
+    try {
+      setSubmittingDelete(true);
+      await api.delete(`/vehicles/${vehicleToDelete.id}`);
+      showToast('Vehicle deleted successfully', 'success');
+      setDeleteModalOpen(false);
+      setVehicleToDelete(null);
+      fetchData();
+    } catch (err) {
+      showToast(err.message || 'Delete failed', 'error');
+    } finally {
+      setSubmittingDelete(false);
     }
   };
 
   return (
     <div>
+      {!user && (
+        <div className="hero-banner">
+          <div className="hero-content">
+            <span className="hero-badge">
+              <Sparkles size={14} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} />
+              Curated Premium Fleet
+            </span>
+            <h1 className="hero-title">Experience the Vault of Luxury</h1>
+            <p className="hero-subtitle">
+              Welcome to AutoVault. Explore premium imports, check real-time variant inventories in Indian Rupees (₹), and book your order directly through our secure transactional ledger.
+            </p>
+            <div className="hero-buttons">
+              <button className="btn btn-primary btn-large" onClick={() => navigate('/register')}>
+                Get Started
+                <ArrowRight size={18} />
+              </button>
+              <button className="btn btn-secondary btn-large" onClick={() => navigate('/login')}>
+                Sign In
+              </button>
+            </div>
+          </div>
+          
+          <div className="hero-features">
+            <div className="feature-card">
+              <div className="feature-icon-wrapper">
+                <ShieldCheck size={20} />
+              </div>
+              <h5>Secure Purchases</h5>
+              <p>Book order requests instantly with secure user account controls and transactional logs.</p>
+            </div>
+            
+            <div className="feature-card">
+              <div className="feature-icon-wrapper">
+                <Sparkles size={20} />
+              </div>
+              <h5>Real-time Inventory</h5>
+              <p>Inspect exact color stock levels, Indian Rupee (₹) pricing, and availability tags.</p>
+            </div>
+            
+            <div className="feature-card">
+              <div className="feature-icon-wrapper">
+                <TrendingUp size={20} />
+              </div>
+              <h5>Admin Control Panel</h5>
+              <p>Registered dealership admins can list vehicle models, update variant data, and view ledgers.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="page-header">
         <div className="page-title">
           <h1>Vehicle Showroom</h1>
@@ -216,7 +282,7 @@ export default function Vehicles({ showToast }) {
                     <div className="color-stocks">
                       {vehicleInventory.length === 0 ? (
                         <div style={{ fontSize: '0.85rem', color: 'var(--error)', fontStyle: 'italic' }}>
-                          Out of stock / No inventory added
+                          Out of stock
                         </div>
                       ) : (
                         vehicleInventory.map(inv => (
@@ -227,7 +293,7 @@ export default function Vehicles({ showToast }) {
                             <span style={{ fontWeight: '500' }}>{inv.color}</span>
                             <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                               <span style={{ fontWeight: '700', color: 'var(--accent)' }}>
-                                ${inv.price.toLocaleString()}
+                                ₹{inv.price.toLocaleString('en-IN')}
                               </span>
                               <span className={`stock-tag ${inv.quantity > 0 ? 'in' : 'out'}`}>
                                 {inv.quantity > 0 ? `${inv.quantity} left` : 'Sold Out'}
@@ -237,47 +303,47 @@ export default function Vehicles({ showToast }) {
                         ))
                       )}
                     </div>
+                  </div>
 
-                    <div className="vehicle-actions">
-                      {isCustomer && (
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => openPurchaseModal(vehicle)}
-                          disabled={!vehicleInventory.some(i => i.quantity > 0)}
-                        >
-                          <ShoppingBag size={16} />
-                          Purchase
-                        </button>
-                      )}
-                      
-                      {isAdmin && (
-                        <>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => openEditModal(vehicle)}
-                          >
-                            <Edit size={16} />
-                            Edit
-                          </button>
-                          <button
-                            className="btn btn-danger"
-                            onClick={() => handleDeleteVehicle(vehicle.id)}
-                          >
-                            <Trash2 size={16} />
-                            Delete
-                          </button>
-                        </>
-                      )}
-
-                      {!user && (
+                  <div className="vehicle-actions">
+                    {isCustomer && (
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => openPurchaseModal(vehicle)}
+                        disabled={!vehicleInventory.some(i => i.quantity > 0)}
+                      >
+                        <ShoppingBag size={16} />
+                        Purchase
+                      </button>
+                    )}
+                    
+                    {isAdmin && (
+                      <>
                         <button
                           className="btn btn-secondary"
-                          onClick={() => showToast('Please register or log in to purchase vehicles', 'error')}
+                          onClick={() => openEditModal(vehicle)}
                         >
-                          View Details
+                          <Edit size={16} />
+                          Edit
                         </button>
-                      )}
-                    </div>
+                        <button
+                          className="btn btn-danger"
+                          onClick={() => openDeleteModal(vehicle)}
+                        >
+                          <Trash2 size={16} />
+                          Delete
+                        </button>
+                      </>
+                    )}
+
+                    {!user && (
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => showToast('Please register or log in to purchase vehicles', 'error')}
+                      >
+                        View Details
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -321,7 +387,7 @@ export default function Vehicles({ showToast }) {
                     })
                     .map(inv => (
                       <option key={inv.id} value={inv.id} disabled={inv.quantity === 0}>
-                        {inv.color} (${inv.price.toLocaleString()} - {inv.quantity} in stock) {inv.quantity === 0 ? '[SOLD OUT]' : ''}
+                        {inv.color} (₹{inv.price.toLocaleString('en-IN')} - {inv.quantity} in stock) {inv.quantity === 0 ? '[SOLD OUT]' : ''}
                       </option>
                     ))}
                 </select>
@@ -353,12 +419,12 @@ export default function Vehicles({ showToast }) {
                   }}>
                     <div style={{ display: 'flex', justifycontent: 'space-between', marginBottom: '0.5rem' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>Unit Price:</span>
-                      <span style={{ fontWeight: '600' }}>${selectedInventory.price.toLocaleString()}</span>
+                      <span style={{ fontWeight: '600' }}>₹{selectedInventory.price.toLocaleString('en-IN')}</span>
                     </div>
                     <div style={{ display: 'flex', justifycontent: 'space-between', borderTop: '1px solid rgba(69, 162, 158, 0.1)', paddingTop: '0.5rem' }}>
                       <span style={{ color: 'var(--accent)', fontWeight: '700' }}>Total Cost:</span>
                       <span style={{ color: 'var(--accent)', fontWeight: '800', fontSize: '1.2rem' }}>
-                        ${(selectedInventory.price * purchaseQuantity).toLocaleString()}
+                        ₹{(selectedInventory.price * purchaseQuantity).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
@@ -449,6 +515,56 @@ export default function Vehicles({ showToast }) {
                 {submittingEdit ? 'Saving...' : 'Save Changes'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Delete Confirmation Modal */}
+      {deleteModalOpen && vehicleToDelete && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <button className="btn-icon modal-close" onClick={() => setDeleteModalOpen(false)}>
+              <X size={20} />
+            </button>
+            <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+              <div style={{
+                background: 'rgba(255, 77, 77, 0.1)',
+                color: 'var(--error)',
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '1rem'
+              }}>
+                <Trash2 size={30} />
+              </div>
+              <h2 className="modal-title" style={{ color: 'var(--text-primary)', marginBottom: '0.75rem' }}>Confirm Delete</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+                Are you sure you want to delete <strong style={{ color: 'var(--text-primary)' }}>{vehicleToDelete.make} {vehicleToDelete.model}</strong>?
+                This action cannot be undone. Past purchase records will remain, but the vehicle model will be removed from the catalog.
+              </p>
+              
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                  onClick={() => setDeleteModalOpen(false)}
+                  disabled={submittingDelete}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-danger"
+                  style={{ flex: 1, backgroundColor: 'var(--error)' }}
+                  onClick={handleConfirmDelete}
+                  disabled={submittingDelete}
+                >
+                  {submittingDelete ? 'Deleting...' : 'Delete Model'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

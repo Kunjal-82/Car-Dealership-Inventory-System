@@ -4,6 +4,15 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'testsecret';
 
+const setTokenCookie = (res, token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  });
+};
+
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
@@ -27,7 +36,8 @@ exports.register = async (req, res, next) => {
     await user.save();
 
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
-    res.status(201).json({ user, token });
+    setTokenCookie(res, token);
+    res.status(201).json({ user });
   } catch (err) {
     next(err);
   }
@@ -51,7 +61,29 @@ exports.login = async (req, res, next) => {
     }
 
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
-    res.status(200).json({ user, token });
+    setTokenCookie(res, token);
+    res.status(200).json({ user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.logout = async (req, res, next) => {
+  try {
+    res.clearCookie('token');
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.getMe = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ user });
   } catch (err) {
     next(err);
   }

@@ -12,8 +12,8 @@ function Navigation({ showToast }) {
   const { user, logout, isAdmin, isCustomer } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     showToast('Logged out successfully', 'success');
     navigate('/login');
   };

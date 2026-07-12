@@ -35,4 +35,24 @@ const userSchema = new mongoose.Schema({
   }
 });
 
+userSchema.pre('deleteOne', async function(next) {
+  const query = this.getQuery();
+  const userId = query._id;
+  if (userId) {
+    const Purchase = mongoose.model('Purchase');
+    await Purchase.deleteMany({ userId });
+  }
+  next();
+});
+
+userSchema.pre('findOneAndDelete', async function(next) {
+  const query = this.getQuery();
+  const userId = query._id;
+  if (userId) {
+    const Purchase = mongoose.model('Purchase');
+    await Purchase.deleteMany({ userId });
+  }
+  next();
+});
+
 module.exports = mongoose.model('User', userSchema);

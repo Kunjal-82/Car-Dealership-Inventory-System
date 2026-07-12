@@ -6,8 +6,8 @@ const inventoryController = require('../controllers/inventoryController');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 
 router.post('/', authenticateToken, requireRole(['admin']), vehicleController.createVehicle);
-router.get('/', authenticateToken, vehicleController.getVehicles);
-router.get('/search', authenticateToken, vehicleController.searchVehicles);
+router.get('/', vehicleController.getVehicles);
+router.get('/search', vehicleController.searchVehicles);
 router.put('/:id', authenticateToken, requireRole(['admin']), vehicleController.updateVehicle);
 router.delete('/:id', authenticateToken, requireRole(['admin']), vehicleController.deleteVehicle);
 

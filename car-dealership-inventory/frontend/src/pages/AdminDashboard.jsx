@@ -52,7 +52,7 @@ export default function AdminDashboard({ showToast }) {
       const inv = inventories.find(i => i.id === selectedInventoryId);
       if (inv) {
         setColor(inv.color);
-        setQuantity(''); // Let user enter quantity to add
+        setQuantity(inv.quantity); // Pre-populate with current absolute quantity
         setPrice(inv.price);
       }
     }
@@ -108,13 +108,23 @@ export default function AdminDashboard({ showToast }) {
 
     try {
       setSubmittingInventory(true);
-      // Call unified vehicle restocking endpoint
-      await api.post(`/vehicles/${selectedVehicleId}/restock`, {
-        color,
-        quantity: Number(quantity),
-        price: Number(price)
-      });
-      showToast('Inventory restocked successfully!', 'success');
+      if (selectedInventoryId === 'new') {
+        // Call unified vehicle restocking endpoint to create/restock
+        await api.post(`/vehicles/${selectedVehicleId}/restock`, {
+          color,
+          quantity: Number(quantity),
+          price: Number(price)
+        });
+        showToast('Inventory variant added successfully!', 'success');
+      } else {
+        // Call update endpoint to modify existing inventory variant fields (color name, absolute quantity, price)
+        await api.put(`/inventory/${selectedInventoryId}`, {
+          color,
+          quantity: Number(quantity),
+          price: Number(price)
+        });
+        showToast('Inventory variant updated successfully!', 'success');
+      }
       
       // Reset inventory form
       setSelectedVehicleId('');
@@ -264,7 +274,7 @@ export default function AdminDashboard({ showToast }) {
                       <option value="new">[+] Add New Color Variant</option>
                       {activeVehicleInventories.map(inv => (
                         <option key={inv.id} value={inv.id}>
-                          {inv.color} (Current Stock: {inv.quantity} - Price: ${inv.price.toLocaleString()})
+                          {inv.color} (Current Stock: {inv.quantity} - Price: ₹{inv.price.toLocaleString('en-IN')})
                         </option>
                       ))}
                     </select>
@@ -280,7 +290,6 @@ export default function AdminDashboard({ showToast }) {
                       value={color}
                       onChange={(e) => setColor(e.target.value)}
                       required
-                      disabled={selectedInventoryId !== 'new'} // lock color for editing (can write if we want but best is to lock it or let them edit)
                     />
                   </div>
 
@@ -302,7 +311,7 @@ export default function AdminDashboard({ showToast }) {
 
                   {/* Price */}
                   <div className="form-group">
-                    <label className="form-label">Price per Unit ($)</label>
+                    <label className="form-label">Price per Unit (₹)</label>
                     <input
                       type="number"
                       className="form-input"
@@ -325,7 +334,7 @@ export default function AdminDashboard({ showToast }) {
                 <RefreshCw size={16} />
                 {submittingInventory 
                   ? 'Saving inventory...' 
-                  : selectedInventoryId === 'new' ? 'Add Inventory Variant' : 'Restock / Update Variant'}
+                  : selectedInventoryId === 'new' ? 'Add Inventory Variant' : 'Update Inventory Variant'}
               </button>
             </form>
           </div>
